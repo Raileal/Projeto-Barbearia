@@ -38,7 +38,7 @@ def EnviaEmail(destinatario,mensagem):
 
 def formatar_mensagem(nome_cliente, data, horarios):
     data_objeto = datetime.strptime(data, "%Y-%m-%d").date()
-    data_formatada = data_objeto.strftime("%d do %m de %Y")
+    data_formatada = data_objeto.strftime("%d/%m/%Y")
     horarios_formatados = "\n".join(horarios)
     formato_mensagem = f'''        
 Olá, {nome_cliente}!
@@ -53,3 +53,38 @@ Equipe da Barbearia'''
 
     return formato_mensagem
 
+def formatar_mensagem_perdao(nome_cliente, data, horarios):
+    print('entrou auqi')
+    horarios_formatados = "\n".join(horarios)
+    formato_mensagem = f'''        
+Olá, {nome_cliente}!
+
+Gostaríamos de pedir desculpas, mas não conseguiremos atendê-lo no dia {data}, nos seguintes horários:
+
+{horarios_formatados}
+
+Pedimos desculpas pelo inconveniente e esperamos poder atendê-lo em outra ocasião.
+
+
+Atenciosamente,
+Equipe da Barbearia'''
+
+    return formato_mensagem
+
+def formatar_mensagem_lista_perdao(nome_cliente, data, horarios):
+    print('entrou auqi')
+    horarios_formatados = "\n".join(horarios)
+    formato_mensagem = f'''        
+Olá, {nome_cliente}!
+
+Gostaríamos de pedir desculpas, mas não conseguiremos atendê-lo no dia {data}, nos seguintes horários:
+
+{horarios_formatados}
+
+Pedimos desculpas pelo inconveniente e esperamos poder atendê-lo em outra ocasião.
+
+
+Atenciosamente,
+Equipe da Barbearia'''
+
+    return formato_mensagem

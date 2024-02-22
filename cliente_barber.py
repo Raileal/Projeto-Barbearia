@@ -208,7 +208,7 @@ class Ui_Main(QMainWindow, Main):
             QtWidgets.QMessageBox.information(self, 'Erro', 'Selecione pelo menos um horário.')
         else:
             horarios_selecionados = self.horarios_selecionados
-            data_hora_nome = f"{self.data_enviar} {', '.join(horarios_selecionados)} {self.nome}"
+            data_hora_nome = f"{self.data_enviar} {', '.join(horarios_selecionados)} {self.nome} {email}"
             print(data_hora_nome)
             # Adiciona um diálogo de confirmação
             reply = QtWidgets.QMessageBox.question(self, 'Confirmação', 'Tem certeza que deseja agendar este horário?',

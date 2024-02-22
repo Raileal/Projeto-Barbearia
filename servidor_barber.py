@@ -40,7 +40,7 @@ def menu(con, cliente):
                     data = data_hora[0].strip()
                     hora = data_hora[1].strip() 
                     if not dados_agenda.verificar_data_e_hora(data, hora):
-                        mensagem = dados_agenda.inserir_data_hora_nome(data, hora, 'Disponivel')
+                        mensagem = dados_agenda.inserir_data_hora_nome(data, hora, "Disponível", "Disponível")
                             
         ###Falta vir o nome, ou seja, uma busca mais refinada.
         elif mensagem == '2':
@@ -86,8 +86,10 @@ def menu(con, cliente):
                 if dados_agenda.verificar_data_escolhida(receber_mensagem):
                     if dados_agenda.drop_data_agenda(receber_mensagem):
                         con.send('1'.encode())
+                        print('retornou 1')
                     else:
                         con.send('0'.encode())
+                        print('retornou 0')
                 else:
                     con.send('0'.encode())
             except mysql.connector.Error as err:
@@ -105,11 +107,13 @@ def menu(con, cliente):
             data = dados_lista[0]
             hora = dados_lista[1]
             nome = dados_lista[2]
+            email = dados_lista[3]
             print(data)
             print(hora)
             print(nome)
+            print(email)
             if dados_agenda.verificar_hora_data_escolhida(data, hora) == 1:
-                agenda = dados_agenda.atualizar_nome(data,hora,nome)
+                agenda = dados_agenda.atualizar_nome(data,hora,nome,email)
                 if not agenda:
                     con.send('1'.encode())
                 else:
@@ -119,6 +123,23 @@ def menu(con, cliente):
                 
                 
         elif mensagem == '6':
+            print('entrou no 6')
+            receber_mensagem = con.recv(4096).decode()
+            print('recebi',receber_mensagem)
+            dados_lista = receber_mensagem.split(' ')
+            data = dados_lista[0]
+            hora = dados_lista[1]
+            if dados_agenda.verificar_hora_data_escolhida(data, hora) == 1:
+                exclui = dados_agenda.drop_data_hora_agenda(data,hora)
+                if exclui:
+                    con.send('1'.encode())
+                else:
+                    con.send('0'.encode())
+            else:
+                con.send('2'.encode())
+        
+        elif mensagem == '6.1':
+            print('entrou no 6.1')
             receber_mensagem = con.recv(4096).decode()
             print('recebi',receber_mensagem)
             dados_lista = receber_mensagem.split(' ')
@@ -126,7 +147,7 @@ def menu(con, cliente):
             hora = dados_lista[1]
             exclui = dados_agenda.drop_data_hora_agenda(data,hora)
             if exclui:
-                con.send('1'.encode())
+                con.send('3'.encode())
             else:
                 con.send('0'.encode())
 
@@ -163,9 +184,57 @@ def menu(con, cliente):
                 print("Erro:", e)
                 con.send('0'.encode())
 
-
-       
-
+        elif mensagem == '8':
+            receber_mensagem = con.recv(4096).decode()
+            print('recebi ->', receber_mensagem)
+            dados_lista = receber_mensagem.split(' ')
+            data = dados_lista[0]
+            hora = dados_lista[1]
+            nome = dados_lista[2]
+            email = dados_agenda.buscar_email_pelo_nome(data, hora, nome)
+            print('email buscado->',email)
+            if email:                                                
+                con.send(str(email).encode())
+            else:
+                con.send('0'.encode())
+        
+        elif mensagem == '9':
+            print('entrou no 9')
+            receber_mensagem = con.recv(4096).decode()
+            print('recebi ->', receber_mensagem)
+            try:
+                datas_marcadas = dados_agenda.buscar_nome_horario_por_data(receber_mensagem)
+                print(datas_marcadas)
+                if datas_marcadas:
+                    print('retorno ->', datas_marcadas)
+                    datas_formatadas = '\n'.join([f"{data[0]} {datetime.strptime(data[1], '%H:%M:%S').strftime('%H:%M:%S')} {data[2]} {data[3]}" for data in datas_marcadas])
+                    print(datas_formatadas)
+                    
+                    if datas_formatadas:
+                        datas_formatadas_lista = datas_formatadas.splitlines()
+                        print('Datas formatadas lista ->', datas_formatadas_lista)
+                        print("tipo ->", type(datas_formatadas_lista))
+                        dados = []
+                        for datas in datas_formatadas_lista:
+                            data, hora, nome, email = datas.split(' ')
+                            print(data)
+                            print(hora)
+                            print(nome)
+                            print(email)
+                            dados.append(f'{data} {hora} {nome} {email}')
+                            
+                        if dados:
+                            if not dados_agenda.verificar_hora_data_escolhida(data, hora) == 1:
+                                con.send('\n'.join(dados).encode())
+                            else:
+                                con.send('2'.encode())
+                        else:
+                            con.send('0'.encode())
+                else:
+                    con.send('0'.encode())
+                    
+            except Exception as e:
+                con.send('0'.encode())
 
     print(f"[DESCONECTADO]")
     con.close()

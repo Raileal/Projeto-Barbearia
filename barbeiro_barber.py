@@ -13,6 +13,7 @@ from PyQt5.QtWidgets import QTableWidgetItem
 from telas.tela_barbeiro_ui import *
 from telas.Tela_Buscar_Barbeiro_ui import *
 from telas.Tela_Agenda_Barber_ui import *
+from funcoes.Auxiliares import *
  
 ip = '192.168.2.105'
 porta = 8007
@@ -341,9 +342,10 @@ class Ui_Main(QMainWindow, Main):
             QMessageBox.warning(self, "Campo Vazio", "Por favor, insira uma data antes de buscar.")
             
     def on_remover_clicked(self, lineEdit):
-        print("Remover clicado")
         data = lineEdit.text()
-        if data:
+        if data:            
+            self.envia_lista_email(lineEdit.text())
+            
             client_socket.send('4'.encode())
             client_socket.send(str(data).encode())
             recv = client_socket.recv(4096).decode()
@@ -351,8 +353,8 @@ class Ui_Main(QMainWindow, Main):
             if recv == '1':
                 QMessageBox.information(self, "Exclusão", "Excluido.")    
                 self.QtStack.setCurrentIndex(0)
-            else:
-                QMessageBox.information(self, "Exclusão", "Data não excluída.")
+            # else:
+            #     QMessageBox.information(self, "Exclusão", "Data não excluída.")
         else:
             QMessageBox.information(self, "Erro", "Por favor, insira uma data válida.")
     
@@ -411,21 +413,66 @@ class Ui_Main(QMainWindow, Main):
             client_socket.send(f"{data} {hora}".encode())
             
             recv = client_socket.recv(4096).decode()
-            if recv:
+            if recv == '1':
                 QMessageBox.information(self, "Exclusão", "Data e Hora excluída.")
                 self.QtStack.setCurrentIndex(0)
+            elif recv == '2':
+                reply = QMessageBox.question(
+                self,
+                'Confirmação',
+                f'Esse horario já foi escolhido por alguem, deseja remover mesmo assim?',
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.No
+                )
+                if reply == QMessageBox.Yes:
+                    self.envia_email(data,hora,nome)
+                    client_socket.send('6.1'.encode())
+                    client_socket.send(f"{data} {hora}".encode())
+                    recv6 = client_socket.recv(4096).decode()
+                    if recv6 == '3':
+                        QMessageBox.information(self, "Exclusão", "Data e Hora excluída.")
+                        self.QtStack.setCurrentIndex(0)
             else:
                 QMessageBox.information(self, "Exclusão", "Data e Hora não excluída.")
 
-    
+    def envia_email(self,data,hora,nome):
+        client_socket.send('8'.encode())
+        print(nome)
+        client_socket.send(f"{data} {hora} {str(nome)}".encode())
+        
+        email = client_socket.recv(4096).decode()
+        print(email)
+        mensagem = formatar_mensagem_perdao(nome,data,hora)
+        EnviaEmail(email,mensagem)
+        
+    def envia_lista_email(self,data):
+        print('entrou aqiui')
+        
+        print(data)
+        client_socket.send('9'.encode())
+        client_socket.send(str(data).encode())
+        data_hora_string = client_socket.recv(4096).decode().strip()
+        if data_hora_string == '0':
+            QMessageBox.information(self, "Exclusão", "Não buscou nada entao não excluiu")
+        elif data_hora_string == '2':
+            QMessageBox.information(self, "Exclusão", "Email não cadastrado")
+        else:
+            print('barber ->',data_hora_string)
+            pessoas = data_hora_string.splitlines()
+            for pessoa in pessoas:
+                strigs = pessoa.split(' ')
+                data1 = strigs[0]
+                hora = strigs[1]
+                nome = strigs[2]
+                email = strigs[3]
 
+                mensagem = formatar_mensagem_lista_perdao(nome,data1,hora)
+                EnviaEmail(email,mensagem)
+            
+            print('Acabou a função')
 
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     show_main = Ui_Main()
     sys.exit(app.exec_())
-    
-
-## Usa o list2 como tela para printar os dados do bd
-## Tenho que remover o elemento clicado.
