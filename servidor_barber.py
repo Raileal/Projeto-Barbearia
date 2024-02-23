@@ -2,6 +2,7 @@ import threading
 import socket
 from funcoes.Bd import *
 from funcoes.armazena_agenda import *
+from funcoes.Auxiliares import *
 from datetime import datetime
 
 host = ''
@@ -80,16 +81,17 @@ def menu(con, cliente):
                 con.send('0'.encode())
                 
         elif mensagem == '4':
+            print('Entrou no 4')
             receber_mensagem = con.recv(4096).decode()
             print('recebi 4 ->', receber_mensagem)
             try:
-                if dados_agenda.verificar_data_escolhida(receber_mensagem):
+                verifica = dados_agenda.verificar_data_escolhida(receber_mensagem)
+                print('4',verifica)
+                if verifica:
                     if dados_agenda.drop_data_agenda(receber_mensagem):
                         con.send('1'.encode())
-                        print('retornou 1')
                     else:
                         con.send('0'.encode())
-                        print('retornou 0')
                 else:
                     con.send('0'.encode())
             except mysql.connector.Error as err:
@@ -197,44 +199,25 @@ def menu(con, cliente):
                 con.send(str(email).encode())
             else:
                 con.send('0'.encode())
-        
+                
+        #rnviar_email
         elif mensagem == '9':
-            print('entrou no 9')
-            receber_mensagem = con.recv(4096).decode()
-            print('recebi ->', receber_mensagem)
-            try:
-                datas_marcadas = dados_agenda.buscar_nome_horario_por_data(receber_mensagem)
-                print(datas_marcadas)
-                if datas_marcadas:
-                    print('retorno ->', datas_marcadas)
-                    datas_formatadas = '\n'.join([f"{data[0]} {datetime.strptime(data[1], '%H:%M:%S').strftime('%H:%M:%S')} {data[2]} {data[3]}" for data in datas_marcadas])
-                    print(datas_formatadas)
-                    
-                    if datas_formatadas:
-                        datas_formatadas_lista = datas_formatadas.splitlines()
-                        print('Datas formatadas lista ->', datas_formatadas_lista)
-                        print("tipo ->", type(datas_formatadas_lista))
-                        dados = []
-                        for datas in datas_formatadas_lista:
-                            data, hora, nome, email = datas.split(' ')
-                            print(data)
-                            print(hora)
-                            print(nome)
-                            print(email)
-                            dados.append(f'{data} {hora} {nome} {email}')
-                            
-                        if dados:
-                            if not dados_agenda.verificar_hora_data_escolhida(data, hora) == 1:
-                                con.send('\n'.join(dados).encode())
-                            else:
-                                con.send('2'.encode())
+            dados = con.recv(4096).decode()
+            datas_marcadas = dados_agenda.buscar_nome_horario_por_data(dados)
+            if datas_marcadas:
+                datas_formatadas = '\n'.join([f"{data[0]} {datetime.strptime(data[1], '%H:%M:%S').strftime('%H:%M:%S')} {data[2]} {data[3]}" for data in datas_marcadas])
+                print(datas_formatadas)
+                if datas_formatadas:
+                    datas_formatadas_lista = datas_formatadas.splitlines()
+                    print('Datas formatadas lista ->', datas_formatadas_lista)
+                    for datas in datas_formatadas_lista:
+                        data, hora, nome, email = datas.split(' ')
+                        if email == 'Disponível':
+                            print('Não envia nada')
                         else:
-                            con.send('0'.encode())
-                else:
-                    con.send('0'.encode())
-                    
-            except Exception as e:
-                con.send('0'.encode())
+                            mensagem = formatar_mensagem_lista_perdao(nome,data,hora)
+                            EnviaEmail_Barbeiro(email,mensagem)
+            con.send('1'.encode())
 
     print(f"[DESCONECTADO]")
     con.close()

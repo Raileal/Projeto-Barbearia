@@ -59,7 +59,6 @@ class Armazenar_agenda:
         result = cursor.fetchone()
         cursor.close()
         return 1 if result[0] > 0 else 0
-    
 
 
     def verificar_data_e_hora(self, data, hora):
@@ -144,6 +143,7 @@ class Armazenar_agenda:
         return exclui
     
     def drop_data_agenda(self, data):
+        print('entrou aqui com o 4')
         cursor = self.db_connection.cursor()
         try:
             delete_query = "DELETE FROM barber_agenda WHERE data = %s"

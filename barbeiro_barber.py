@@ -344,8 +344,8 @@ class Ui_Main(QMainWindow, Main):
     def on_remover_clicked(self, lineEdit):
         data = lineEdit.text()
         if data:            
-            self.envia_lista_email(lineEdit.text())
-            
+            print(data)
+            self.envia_lista_email(data)
             client_socket.send('4'.encode())
             client_socket.send(str(data).encode())
             recv = client_socket.recv(4096).decode()
@@ -353,8 +353,8 @@ class Ui_Main(QMainWindow, Main):
             if recv == '1':
                 QMessageBox.information(self, "Exclusão", "Excluido.")    
                 self.QtStack.setCurrentIndex(0)
-            # else:
-            #     QMessageBox.information(self, "Exclusão", "Data não excluída.")
+            else:
+                QMessageBox.information(self, "Exclusão", "Data não excluída.")
         else:
             QMessageBox.information(self, "Erro", "Por favor, insira uma data válida.")
     
@@ -443,33 +443,20 @@ class Ui_Main(QMainWindow, Main):
         email = client_socket.recv(4096).decode()
         print(email)
         mensagem = formatar_mensagem_perdao(nome,data,hora)
-        EnviaEmail(email,mensagem)
+        EnviaEmail_Barbeiro(email,mensagem)
         
     def envia_lista_email(self,data):
         print('entrou aqiui')
         
-        print(data)
         client_socket.send('9'.encode())
         client_socket.send(str(data).encode())
-        data_hora_string = client_socket.recv(4096).decode().strip()
-        if data_hora_string == '0':
-            QMessageBox.information(self, "Exclusão", "Não buscou nada entao não excluiu")
-        elif data_hora_string == '2':
-            QMessageBox.information(self, "Exclusão", "Email não cadastrado")
-        else:
-            print('barber ->',data_hora_string)
-            pessoas = data_hora_string.splitlines()
-            for pessoa in pessoas:
-                strigs = pessoa.split(' ')
-                data1 = strigs[0]
-                hora = strigs[1]
-                nome = strigs[2]
-                email = strigs[3]
+        recebi = client_socket.recv(4096).decode()
+        print('recebi os dados do 9->',recebi)
+        if recebi == '1':
+            QMessageBox.information(self, "Envio", "Email Enviado com Sucesso.")
+                
 
-                mensagem = formatar_mensagem_lista_perdao(nome,data1,hora)
-                EnviaEmail(email,mensagem)
-            
-            print('Acabou a função')
+    print('Acabou a função')
 
 
 if __name__ == '__main__':
